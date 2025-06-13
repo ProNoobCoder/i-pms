@@ -76,7 +76,7 @@ def upload():
 
         return redirect(url_for('success'))
 
-    return render_template('index.html')
+    return render_template('index.html', hostname=hostname)
 
 @app.route('/take_photo/<stage>', methods=['GET', 'POST'])
 def take_photo(stage):
