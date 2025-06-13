@@ -76,6 +76,8 @@ def upload():
 
         return redirect(url_for('success'))
 
+    # GET method — fetch hostname from session safely
+    hostname = session.get('hostname')
     return render_template('index.html', hostname=hostname)
 
 @app.route('/take_photo/<stage>', methods=['GET', 'POST'])
