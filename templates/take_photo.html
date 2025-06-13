@@ -1,13 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Take {{ stage }} Photo</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>i-PMS | Upload</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h2>Take {{ stage }} Photo</h2>
-  <form method="POST" enctype="multipart/form-data">
-    <input type="file" name="photo" accept="image/*" capture="environment" required>
-    <button type="submit">Upload Photo</button>
-  </form>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-gray-50 to-gray-100">
+  <div class="w-full max-w-sm bg-white p-6 rounded-2xl shadow-xl">
+    <h2 class="text-2xl font-semibold mb-4 text-blue-700 text-center">🧼 i-PMS - Preventive Maintenance</h2>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+      <input type="text" name="cleaner" placeholder="Enter your name" required class="w-full border border-gray-300 rounded-md p-2">
+      <input type="text" name="hostname" placeholder="Enter hostname" required class="w-full border border-gray-300 rounded-md p-2">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Before Photo</label>
+        <input type="file" name="before" accept="image/*" required class="w-full mt-1">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">After Photo</label>
+        <input type="file" name="after" accept="image/*" required class="w-full mt-1">
+      </div>
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg shadow transition duration-300">Submit</button>
+    </form>
+  </div>
+</body>
+</html>
+
+<!-- Success Page -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>i-PMS | Done</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-green-50 to-green-100">
+  <div class="text-center">
+    <h2 class="text-3xl font-bold text-green-700 mb-4">✅ Successfully Logged!</h2>
+    <a href="{{ url_for('logout') }}" class="text-blue-600 hover:underline">Start New Entry</a>
+  </div>
 </body>
 </html>
