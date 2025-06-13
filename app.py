@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+os.makedirs("static/photos", exist_ok=True)
+
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 UPLOAD_FOLDER = "static/photos"
