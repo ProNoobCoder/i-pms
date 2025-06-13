@@ -1,50 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>i-PMS</title>
-    <style>
-        body {
-            font-family: sans-serif;
-            max-width: 400px;
-            margin: auto;
-            padding: 1em;
-        }
-        input, button {
-            display: block;
-            width: 100%;
-            margin: 10px 0;
-            padding: 12px;
-            font-size: 16px;
-        }
-        .msg {
-            background: #ffe4e1;
-            padding: 10px;
-            margin-bottom: 1em;
-            border-left: 5px solid #ff0000;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>i-PMS | Upload</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h2>🧼 i-PMS - Preventive Maintenance</h2>
+<body class="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-gray-50 to-gray-100">
+  <div class="w-full max-w-sm bg-white p-6 rounded-2xl shadow-xl">
+    <h2 class="text-2xl font-semibold mb-4 text-blue-700 text-center">🧼 i-PMS - Preventive Maintenance</h2>
 
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         {% for message in messages %}
-          <div class="msg">{{ message }}</div>
+          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">{{ message }}</div>
         {% endfor %}
       {% endif %}
     {% endwith %}
 
-    <form method="POST" enctype="multipart/form-data">
-        <input type="text" name="cleaner" placeholder="Enter your name" required>
-        <input type="text" name="hostname" placeholder="Enter hostname" required>
-        <label>Before Photo:</label>
-        <input type="file" name="before" accept="image/*" required>
-        <label>After Photo:</label>
-        <input type="file" name="after" accept="image/*" required>
-        <button type="submit">Submit</button>
+    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+      <input type="text" name="cleaner" placeholder="Enter your name" required class="w-full border border-gray-300 rounded-md p-2">
+      <input type="text" name="hostname" value="{{ hostname }}" readonly class="w-full border border-gray-300 rounded-md p-2 bg-gray-100">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">Before Photo</label>
+        <input type="file" name="before" accept="image/*" required class="w-full mt-1">
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700">After Photo</label>
+        <input type="file" name="after" accept="image/*" required class="w-full mt-1">
+      </div>
+      <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg shadow transition duration-300">Submit</button>
     </form>
+  </div>
 </body>
 </html>
