@@ -1,0 +1,18 @@
+<!doctype html>
+<html class="bg-gray-100 text-center text-lg">
+<head>
+  <title>i-PMS | Hostname</title>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen">
+  <h2 class="text-xl mb-2">Enter Hostname</h2>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="text-red-500 mb-2">{{ messages[0] }}</div>
+    {% endif %}
+  {% endwith %}
+  <form method="POST" class="bg-white p-4 rounded shadow w-3/4 max-w-sm">
+    <input type="text" name="hostname" placeholder="IWSD12345" required class="border p-2 w-full mb-3">
+    <button type="submit" class="bg-green-600 text-white py-2 px-4 rounded">Continue</button>
+  </form>
+</body>
+</html>
