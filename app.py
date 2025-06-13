@@ -1,38 +1,35 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 from werkzeug.utils import secure_filename
 from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 import os
+import io
 import psycopg2
 from dotenv import load_dotenv
 
 load_dotenv()
 
-os.makedirs("static/photos", exist_ok=True)
-
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 UPLOAD_FOLDER = "static/photos"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 
-# PostgreSQL connection using Supabase credentials
+# PostgreSQL connection
 def get_db_connection():
     return psycopg2.connect(os.getenv("DATABASE_URL"))
 
+# Add watermark and compress image
 def add_watermark(image_path, text):
     img = Image.open(image_path)
     draw = ImageDraw.Draw(img)
     font = ImageFont.load_default()
-
-    # Use textbbox instead of deprecated textsize
-    bbox = draw.textbbox((0, 0), text, font=font)
-    text_w = bbox[2] - bbox[0]
-    text_h = bbox[3] - bbox[1]
-
     width, height = img.size
-    draw.text((width - text_w - 10, height - text_h - 10), text, font=font, fill="white")
-    img.save(image_path)
+    draw.text((10, height - 20), text, font=font, fill="white")
+    img = img.convert("RGB")
+    img.save(image_path, format="JPEG", quality=70)  # Compress to 70% quality
 
+# Home page (login cleaner name)
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -42,6 +39,7 @@ def index():
             return redirect(url_for("enter_hostname"))
     return render_template("index.html")
 
+# Hostname entry
 @app.route("/enter", methods=["GET", "POST"])
 def enter_hostname():
     if "user" not in session:
@@ -55,6 +53,7 @@ def enter_hostname():
             flash("Hostname must start with 'IWSD' followed by 5 numbers.")
     return render_template("enter_hostname.html")
 
+# Before photo capture
 @app.route("/take_before", methods=["GET", "POST"])
 def take_before():
     if request.method == "POST":
@@ -69,6 +68,7 @@ def take_before():
             return redirect(url_for("take_after"))
     return render_template("take_photo.html", stage="before")
 
+# After photo capture
 @app.route("/take_after", methods=["GET", "POST"])
 def take_after():
     if request.method == "POST":
@@ -81,6 +81,7 @@ def take_after():
             add_watermark(path, f"{hostname}(after)")
             session["after_photo"] = filename
 
+            # Save to DB
             try:
                 with get_db_connection() as conn:
                     with conn.cursor() as cur:
@@ -93,8 +94,30 @@ def take_after():
                 flash("Error saving to database: " + str(e))
                 return redirect(url_for("enter_hostname"))
 
-            return redirect(url_for("success"))
+            return redirect(url_for("download_photos"))
     return render_template("take_photo.html", stage="after")
+
+# Download compressed before & after photos
+@app.route("/download")
+def download_photos():
+    hostname = session.get("hostname")
+    before_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{hostname}(before).jpg")
+    after_path = os.path.join(app.config["UPLOAD_FOLDER"], f"{hostname}(after).jpg")
+
+    # Combine both images into a ZIP in-memory
+    import zipfile
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "a", zipfile.ZIP_DEFLATED) as zip_file:
+        zip_file.write(before_path, arcname=f"{hostname}(before).jpg")
+        zip_file.write(after_path, arcname=f"{hostname}(after).jpg")
+    zip_buffer.seek(0)
+
+    return send_file(
+        zip_buffer,
+        mimetype="application/zip",
+        as_attachment=True,
+        download_name=f"{hostname}_PMS_Photos.zip"
+    )
 
 @app.route("/success")
 def success():
@@ -106,5 +129,4 @@ def logout():
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     app.run(debug=True)
