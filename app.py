@@ -83,7 +83,7 @@ def enter_hostname():
 
 @app.route("/take_before", methods=["GET", "POST"])
 def take_before():
-    if request.method == "POST"]:
+    if request.method == "POST":
         file = request.files.get("before_photo")
         if file and file.filename:
             hostname = session.get("hostname")
@@ -97,7 +97,7 @@ def take_before():
 
 @app.route("/take_after", methods=["GET", "POST"])
 def take_after():
-    if request.method == "POST"]:
+    if request.method == "POST":
         file = request.files.get("after_photo")
         if file and file.filename:
             hostname = session.get("hostname")
