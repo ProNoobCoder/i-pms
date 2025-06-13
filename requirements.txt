@@ -1,6 +1,8 @@
 flask
+flask_sqlalchemy
 pillow
 psycopg2-binary
 python-dotenv
 gunicorn
 supabase
+
