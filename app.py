@@ -1,145 +1,90 @@
 import os
 import zipfile
+import io
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, session, send_file, flash
+from flask import Flask, request, render_template, redirect, flash, send_file, url_for
+from flask_sqlalchemy import SQLAlchemy
 from PIL import Image, ImageDraw, ImageFont
-import psycopg2
-from io import BytesIO
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = "your_secret_key"
+app.secret_key = "supersecretkey"
 
-# PostgreSQL connection URL (from environment variable)
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Configure PostgreSQL
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'postgresql://localhost/ipms')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-# Create directory for storing photos
-PHOTO_DIR = "static/photos"
-os.makedirs(PHOTO_DIR, exist_ok=True)
+UPLOAD_FOLDER = 'uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# Compress images to reduce file size
-def compress_image(image_path):
-    img = Image.open(image_path)
-    img.save(image_path, optimize=True, quality=50)
+class Device(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    hostname = db.Column(db.String(255), unique=True, nullable=False)
+    cleaner = db.Column(db.String(255), nullable=False)
+    date = db.Column(db.String(50), nullable=False)
 
-# Add watermark to image
-def add_watermark(image_path, text):
-    img = Image.open(image_path).convert("RGBA")
-    watermark_layer = Image.new("RGBA", img.size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(watermark_layer)
-    font = ImageFont.load_default()
+db.create_all()
 
-    text_bbox = draw.textbbox((0, 0), text, font=font)
-    text_w = text_bbox[2] - text_bbox[0]
-    text_h = text_bbox[3] - text_bbox[1]
+def compress_image(image, quality=60):
+    img = Image.open(image)
+    buffer = io.BytesIO()
+    img.save(buffer, format="JPEG", quality=quality)
+    buffer.seek(0)
+    return buffer
 
-    x = img.width - text_w - 10
-    y = img.height - text_h - 10
-    draw.text((x, y), text, font=font, fill=(255, 255, 255, 180))
+def add_watermark(image_bytes, hostname):
+    image = Image.open(image_bytes).convert("RGB")
+    draw = ImageDraw.Draw(image)
 
-    watermarked = Image.alpha_composite(img, watermark_layer).convert("RGB")
-    watermarked.save(image_path)
-    compress_image(image_path)
+    # Try to load a font
+    try:
+        font = ImageFont.truetype("arial.ttf", 32)
+    except:
+        font = ImageFont.load_default()
 
-# Get DB connection
-def get_db_connection():
-    return psycopg2.connect(DATABASE_URL)
+    text = f"{hostname}"
+    draw.text((10, 10), text, fill="red", font=font)
+
+    buffer = io.BytesIO()
+    image.save(buffer, format="JPEG", quality=60)
+    buffer.seek(0)
+    return buffer
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
-        user = request.form.get("user")
-        if user:
-            session["user"] = user
-            return redirect(url_for("enter_hostname"))
-    return render_template("index.html")
-
-@app.route("/enter", methods=["GET", "POST"])
-def enter_hostname():
-    if "user" not in session:
-        return redirect(url_for("index"))
-
-    if request.method == "POST":
+        cleaner = request.form.get("cleaner")
         hostname = request.form.get("hostname")
-        if hostname and hostname.startswith("IWSD") and len(hostname) == 9 and hostname[4:].isdigit():
-            session["hostname"] = hostname
+        before_file = request.files.get("before")
+        after_file = request.files.get("after")
 
-            try:
-                with get_db_connection() as conn:
-                    with conn.cursor() as cur:
-                        cur.execute("SELECT status FROM pms_logs WHERE hostname = %s", (hostname,))
-                        result = cur.fetchone()
-                        if result:
-                            serviced_by = result[0]
-                            flash(f"⚠️ This PC has already been serviced by {serviced_by}.")
-                            return redirect(url_for("enter_hostname"))
-            except Exception as e:
-                flash("Database error: " + str(e))
-                return redirect(url_for("enter_hostname"))
+        if not all([cleaner, hostname, before_file, after_file]):
+            flash("⚠️ All fields are required.")
+            return redirect(url_for("index"))
 
-            return redirect(url_for("take_before"))
-        else:
-            flash("⚠️ Hostname must start with 'IWSD' followed by 5 digits.")
-    return render_template("enter_hostname.html")
+        existing = Device.query.filter_by(hostname=hostname).first()
+        if existing:
+            flash(f'⚠️ This PC has already been serviced by "{existing.cleaner}".')
+            return redirect(url_for("index"))
 
-@app.route("/take_before", methods=["GET", "POST"])
-def take_before():
-    if request.method == "POST":
-        file = request.files.get("before_photo")
-        if file and file.filename:
-            hostname = session.get("hostname")
-            filename = f"{hostname}_before.jpg"
-            path = os.path.join(PHOTO_DIR, filename)
-            file.save(path)
-            add_watermark(path, f"{hostname} (before)")
-            session["before_path"] = path
-            return redirect(url_for("take_after"))
-    return render_template("take_before.html")
+        today = datetime.now().strftime("%Y-%m-%d")
 
-@app.route("/take_after", methods=["GET", "POST"])
-def take_after():
-    if request.method == "POST":
-        file = request.files.get("after_photo")
-        if file and file.filename:
-            hostname = session.get("hostname")
-            after_filename = f"{hostname}_after.jpg"
-            after_path = os.path.join(PHOTO_DIR, after_filename)
-            file.save(after_path)
-            add_watermark(after_path, f"{hostname} (after)")
+        before_bytes = add_watermark(compress_image(before_file), hostname)
+        after_bytes = add_watermark(compress_image(after_file), hostname)
 
-            # Insert into database
-            try:
-                with get_db_connection() as conn:
-                    with conn.cursor() as cur:
-                        cur.execute(
-                            """
-                            INSERT INTO pms_logs (hostname, status, timestamp)
-                            VALUES (%s, %s, %s)
-                            """,
-                            (hostname, session.get("user"), datetime.now())
-                        )
-                        conn.commit()
-            except Exception as e:
-                flash("❌ Failed to save to database: " + str(e))
-                return redirect(url_for("take_after"))
+        # Create zip
+        zip_filename = f"{secure_filename(hostname)}.zip"
+        zip_path = os.path.join(UPLOAD_FOLDER, zip_filename)
+        with zipfile.ZipFile(zip_path, "w") as zipf:
+            zipf.writestr(f"{hostname}_before.jpg", before_bytes.read())
+            zipf.writestr(f"{hostname}_after.jpg", after_bytes.read())
 
-            # Create ZIP and download
-            zip_path = os.path.join(PHOTO_DIR, f"{hostname}.zip")
-            with zipfile.ZipFile(zip_path, "w") as zipf:
-                zipf.write(session["before_path"], os.path.basename(session["before_path"]))
-                zipf.write(after_path, os.path.basename(after_path))
+        new_device = Device(hostname=hostname, cleaner=cleaner, date=today)
+        db.session.add(new_device)
+        db.session.commit()
 
-            # Clean session
-            session.pop("hostname", None)
-            session.pop("before_path", None)
+        flash("✅ Uploaded and saved successfully.")
+        return send_file(zip_path, as_attachment=True)
 
-            return send_file(zip_path, as_attachment=True)
-
-    return render_template("take_after.html")
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("index"))
-
-if __name__ == "__main__":
-    app.run(debug=True)
+    return render_template("index.html")
