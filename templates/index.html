@@ -1,13 +1,50 @@
-<!doctype html>
-<html class="bg-gray-100 text-center text-lg">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <title>i-PMS | Login</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>i-PMS</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 400px;
+            margin: auto;
+            padding: 1em;
+        }
+        input, button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 12px;
+            font-size: 16px;
+        }
+        .msg {
+            background: #ffe4e1;
+            padding: 10px;
+            margin-bottom: 1em;
+            border-left: 5px solid #ff0000;
+        }
+    </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen">
-  <h1 class="text-2xl mb-4">Preventive Maintenance</h1>
-  <form method="POST" class="bg-white p-4 rounded shadow w-3/4 max-w-sm">
-    <input type="text" name="username" placeholder="Enter your name" required class="border p-2 w-full mb-3">
-    <button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded">Proceed</button>
-  </form>
+<body>
+    <h2>🧼 i-PMS - Preventive Maintenance</h2>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="msg">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" enctype="multipart/form-data">
+        <input type="text" name="cleaner" placeholder="Enter your name" required>
+        <input type="text" name="hostname" placeholder="Enter hostname" required>
+        <label>Before Photo:</label>
+        <input type="file" name="before" accept="image/*" required>
+        <label>After Photo:</label>
+        <input type="file" name="after" accept="image/*" required>
+        <button type="submit">Submit</button>
+    </form>
 </body>
 </html>
