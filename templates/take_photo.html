@@ -1,13 +1,13 @@
-<!doctype html>
-<html class="bg-gray-100 text-center text-lg">
+<!DOCTYPE html>
+<html>
 <head>
-  <title>i-PMS | Take {{ stage }} photo</title>
+  <title>Take {{ stage }} Photo</title>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen">
-  <h2 class="text-xl mb-4">Take {{ stage }} photo</h2>
-  <form method="POST" enctype="multipart/form-data" class="bg-white p-4 rounded shadow w-3/4 max-w-sm">
-    <input type="file" name="photo" accept="image/*" capture="environment" required class="mb-3">
-    <button type="submit" class="bg-purple-600 text-white py-2 px-4 rounded">Upload {{ stage }}</button>
+<body>
+  <h2>Take {{ stage }} Photo</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <input type="file" name="photo" accept="image/*" capture="environment" required>
+    <button type="submit">Upload Photo</button>
   </form>
 </body>
 </html>
