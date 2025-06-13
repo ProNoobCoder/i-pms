@@ -23,8 +23,13 @@ def add_watermark(image_path, text):
     img = Image.open(image_path)
     draw = ImageDraw.Draw(img)
     font = ImageFont.load_default()
+
+    # Use textbbox instead of deprecated textsize
+    bbox = draw.textbbox((0, 0), text, font=font)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+
     width, height = img.size
-    text_w, text_h = draw.textsize(text, font)
     draw.text((width - text_w - 10, height - text_h - 10), text, font=font, fill="white")
     img.save(image_path)
 
@@ -79,11 +84,10 @@ def take_after():
             try:
                 with get_db_connection() as conn:
                     with conn.cursor() as cur:
-                        cur.execute("INSERT INTO pms_logs (hostname, status, date) VALUES (%s, %s, %s)", (
-                            hostname,
-                            session.get("user"),
-                            datetime.now()
-                        ))
+                        cur.execute(
+                            "INSERT INTO pms_logs (hostname, status, date) VALUES (%s, %s, %s)",
+                            (hostname, session.get("user"), datetime.now())
+                        )
                         conn.commit()
             except Exception as e:
                 flash("Error saving to database: " + str(e))
