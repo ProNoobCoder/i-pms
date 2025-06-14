@@ -2,14 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Success</title>
+    <title>Upload Success</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-green-100 h-screen flex items-center justify-center">
-    <div class="bg-white p-6 rounded-2xl shadow-lg text-center w-11/12 max-w-md">
-        <h2 class="text-2xl text-green-700 font-bold mb-2">Upload Successful!</h2>
-        <p class="text-green-600 mb-4">Your photos were saved and downloaded.</p>
-        <a href="{{ url_for('upload') }}" class="text-green-700 underline font-medium">Upload another</a>
+    <div class="bg-white p-6 rounded-2xl shadow-xl text-center space-y-4 w-11/12 max-w-md">
+        <h1 class="text-2xl font-bold text-green-700">Success!</h1>
+        <p class="text-green-600">Your photos for <strong>{{ hostname }}</strong> were uploaded successfully.</p>
+        <a href="{{ url_for('download', hostname=hostname) }}"
+           class="inline-block bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
+           Download ZIP
+        </a>
+        <a href="{{ url_for('upload') }}" class="block text-green-700 mt-4">Start new entry</a>
     </div>
 </body>
 </html>
