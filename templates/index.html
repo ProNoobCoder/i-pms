@@ -1,50 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>i-PMS | Upload</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <title>i-PMS Upload</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-green-50 to-green-100">
-  <div class="w-full max-w-sm bg-white p-6 rounded-2xl shadow-xl">
-    <h2 class="text-2xl font-semibold mb-4 text-green-700 text-center">🧼 I-PMS</h2>
+<body class="bg-green-50 min-h-screen flex items-center justify-center">
+    <form method="POST" enctype="multipart/form-data"
+          class="bg-white p-6 rounded-2xl shadow-xl w-11/12 max-w-md space-y-4">
+        <h2 class="text-xl font-bold text-green-700 text-center">PMS Photo Upload</h2>
+        
+        <div>
+            <label class="block text-green-600 mb-1 font-semibold">Cleaner</label>
+            <input type="text" value="{{ cleaner }}" disabled
+                   class="w-full p-3 bg-green-100 rounded-lg border border-green-300">
+        </div>
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        {% for message in messages %}
-          <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4 text-sm">
-            {{ message }}
-          </div>
-        {% endfor %}
-      {% endif %}
-    {% endwith %}
+        <div>
+            <label class="block text-green-600 mb-1 font-semibold">Hostname</label>
+            <input type="text" name="hostname" required
+                   class="w-full p-3 border border-green-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500">
+        </div>
 
-    <form method="POST" enctype="multipart/form-data" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">PIC</label>
-        <input type="text" name="cleaner" placeholder="Enter your name" required class="w-full border border-gray-300 rounded-md p-2 focus:outline-none focus:ring-2 focus:ring-green-400">
-      </div>
+        <div>
+            <label class="block text-green-600 mb-1 font-semibold">Before Photo</label>
+            <input type="file" name="before" accept="image/*" capture="environment" required
+                   class="w-full file:rounded-lg file:border file:border-green-300 file:bg-green-100 file:text-green-700">
+        </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Hostname</label>
-        <input type="text" name="hostname" value="{{ hostname }}" readonly class="w-full border border-gray-300 rounded-md p-2 bg-gray-100">
-      </div>
+        <div>
+            <label class="block text-green-600 mb-1 font-semibold">After Photo</label>
+            <input type="file" name="after" accept="image/*" capture="environment" required
+                   class="w-full file:rounded-lg file:border file:border-green-300 file:bg-green-100 file:text-green-700">
+        </div>
 
-      <div>
-        <label class="block text-sm font-medium text-gray-700">Before Photo</label>
-        <input type="file" name="before" accept="image/*" capture="environment" required class="w-full mt-1">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">After Photo</label>
-        <input type="file" name="after" accept="image/*" capture="environment" required class="w-full mt-1">
-      </div>
-
-      <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg shadow transition duration-300">
-        Submit
-      </button>
+        <button type="submit"
+                class="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition">
+            Submit
+        </button>
     </form>
-  </div>
 </body>
 </html>
