@@ -39,7 +39,9 @@ def watermark(image_path, text):
 # Home route — not used directly
 @app.route('/')
 def index():
-    hostname = session.get('hostname', '')
+    hostname = session.get('hostname')
+    if not hostname:
+        return redirect(url_for('enter_hostname'))
     return render_template('index.html', hostname=hostname)
 
 # Enter hostname first
