@@ -99,6 +99,11 @@ def upload():
 def success():
     return render_template('success.html')
 
+@app.route('/logout')
+def logout():
+    session.pop('hostname', None)
+    return redirect(url_for('enter_hostname'))
+
 # Run app
 if __name__ == '__main__':
     app.run(debug=True)
