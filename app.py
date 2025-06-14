@@ -6,20 +6,21 @@ from PIL import Image, ImageDraw, ImageFont
 import os
 
 app = Flask(__name__)
-app.secret_key = 'secretkey'
+app.secret_key = 'secretkey'  # Replace this with a real secret in production
 
-# Configure upload folder and database
+# Configure upload folder
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# PostgreSQL (change this if you're running locally)
+# PostgreSQL (from Supabase)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.jzhmkxvmqifhbpuvoerv:iloveanjingforever@aws-0-us-east-2.pooler.supabase.com:6543/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Model
+# Model (must match existing table in Supabase)
 class Entry(db.Model):
+    __tablename__ = 'entry'  # Explicit to avoid issues
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String(100))
     cleaner = db.Column(db.String(100))
@@ -35,12 +36,13 @@ def watermark(image_path, text):
     draw.text((10, 10), text, font=font, fill="white")
     image.save(image_path)
 
-# Routes
+# Home route: upload form
 @app.route('/')
 def index():
     hostname = session.get('hostname', '')
     return render_template('index.html', hostname=hostname)
 
+# Enter hostname
 @app.route('/enter_hostname', methods=['GET', 'POST'])
 def enter_hostname():
     if request.method == 'POST':
@@ -48,6 +50,7 @@ def enter_hostname():
         return redirect(url_for('upload'))
     return render_template('enter_hostname.html')
 
+# Upload photo route
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     hostname = session.get('hostname')
@@ -65,9 +68,9 @@ def upload():
             return redirect(url_for('upload'))
 
         today = datetime.now().strftime("%Y-%m-%d")
-
         before_filename = secure_filename(f"{hostname}_before.jpg")
         after_filename = secure_filename(f"{hostname}_after.jpg")
+
         before_path = os.path.join(app.config['UPLOAD_FOLDER'], before_filename)
         after_path = os.path.join(app.config['UPLOAD_FOLDER'], after_filename)
 
@@ -91,13 +94,11 @@ def upload():
 
     return render_template('index.html', hostname=hostname)
 
+# Success page
 @app.route('/success')
 def success():
     return render_template('success.html')
 
-# Ensure tables are created on Render
-with app.app_context():
-    db.create_all()
-
+# Run app
 if __name__ == '__main__':
     app.run(debug=True)
