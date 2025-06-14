@@ -1,15 +1,15 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>i-PMS</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8">
+    <title>Success</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4 bg-gradient-to-br from-green-50 to-green-100">
-  <div class="text-center">
-    <h2 class="text-3xl font-bold text-green-700 mb-4">✅ Successfully Logged!</h2>
-    <a href="{{ url_for('enter_hostname') }}" class="text-blue-600 hover:underline">Start New Entry</a>
-  </div>
+<body class="bg-green-100 h-screen flex items-center justify-center">
+    <div class="bg-white p-6 rounded-2xl shadow-lg text-center w-11/12 max-w-md">
+        <h2 class="text-2xl text-green-700 font-bold mb-2">Upload Successful!</h2>
+        <p class="text-green-600 mb-4">Your photos were saved and downloaded.</p>
+        <a href="{{ url_for('upload') }}" class="text-green-700 underline font-medium">Upload another</a>
+    </div>
 </body>
 </html>
