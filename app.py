@@ -12,7 +12,7 @@ app.secret_key = 'secretkey'  # Replace this with a real secret in production
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# PostgreSQL (from Supabase)
+# PostgreSQL connection (from Supabase)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.jzhmkxvmqifhbpuvoerv:iloveanjingforever@aws-0-us-east-2.pooler.supabase.com:6543/postgres'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -20,7 +20,7 @@ db = SQLAlchemy(app)
 
 # Model (must match existing table in Supabase)
 class Entry(db.Model):
-    __tablename__ = 'entry'  # Explicit to avoid issues
+    __tablename__ = 'entry'
     id = db.Column(db.Integer, primary_key=True)
     hostname = db.Column(db.String(100))
     cleaner = db.Column(db.String(100))
@@ -28,7 +28,7 @@ class Entry(db.Model):
     before_photo = db.Column(db.String(200))
     after_photo = db.Column(db.String(200))
 
-# Watermark function
+# Watermarking function
 def watermark(image_path, text):
     image = Image.open(image_path)
     draw = ImageDraw.Draw(image)
@@ -36,13 +36,13 @@ def watermark(image_path, text):
     draw.text((10, 10), text, font=font, fill="white")
     image.save(image_path)
 
-# Home route: upload form
+# Home route — not used directly
 @app.route('/')
 def index():
     hostname = session.get('hostname', '')
     return render_template('index.html', hostname=hostname)
 
-# Enter hostname
+# Enter hostname first
 @app.route('/enter_hostname', methods=['GET', 'POST'])
 def enter_hostname():
     if request.method == 'POST':
@@ -50,7 +50,7 @@ def enter_hostname():
         return redirect(url_for('upload'))
     return render_template('enter_hostname.html')
 
-# Upload photo route
+# Upload photo route — protected
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     hostname = session.get('hostname')
@@ -94,11 +94,21 @@ def upload():
 
     return render_template('index.html', hostname=hostname)
 
-# Success page
+# Success page — protected
 @app.route('/success')
 def success():
+    if 'hostname' not in session:
+        return redirect(url_for('enter_hostname'))
     return render_template('success.html')
 
+# Optional camera/photo page — protected
+@app.route('/take_photo')
+def take_photo():
+    if 'hostname' not in session:
+        return redirect(url_for('enter_hostname'))
+    return render_template('take_photo.html')
+
+# Logout and clear session
 @app.route('/logout')
 def logout():
     session.pop('hostname', None)
