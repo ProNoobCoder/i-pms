@@ -1,118 +1,40 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
-from datetime import datetime
-from PIL import Image, ImageDraw, ImageFont
-import os
-import zipfile
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload PMS Photos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-green-100 flex items-center justify-center min-h-screen">
+    <form method="POST" enctype="multipart/form-data"
+          class="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-md space-y-4">
+        <h1 class="text-xl font-bold text-green-700 text-center">Upload PMS Photos</h1>
 
-app = Flask(__name__)
-app.secret_key = 'secretkey'
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="text-red-500 text-sm">
+              {% for msg in messages %}
+                <li>{{ msg }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
 
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
-app.config['ZIP_FOLDER'] = 'static/zips'
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-os.makedirs(app.config['ZIP_FOLDER'], exist_ok=True)
+        <input type="text" name="hostname" placeholder="Enter Hostname"
+               class="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-green-400" required>
 
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres.jzhmkxvmqifhbpuvoerv:iloveanjingforever@aws-0-us-east-2.pooler.supabase.com:6543/postgres'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        <label class="block text-sm">Before Photo:</label>
+        <input type="file" name="before" accept="image/*" capture="environment"
+               class="w-full border rounded px-4 py-2" required>
 
-db = SQLAlchemy(app)
+        <label class="block text-sm">After Photo:</label>
+        <input type="file" name="after" accept="image/*" capture="environment"
+               class="w-full border rounded px-4 py-2" required>
 
-class Entry(db.Model):
-    __tablename__ = 'entry'
-    id = db.Column(db.Integer, primary_key=True)
-    hostname = db.Column(db.String(100))
-    cleaner = db.Column(db.String(100))
-    date = db.Column(db.String(20))
-    before_photo = db.Column(db.String(200))
-    after_photo = db.Column(db.String(200))
-
-def watermark(image_path, text):
-    image = Image.open(image_path)
-    draw = ImageDraw.Draw(image)
-    font = ImageFont.load_default()
-    draw.text((10, 10), text, font=font, fill="white")
-    image.save(image_path)
-
-@app.route('/')
-def home():
-    return redirect(url_for('enter_cleaner'))
-
-@app.route('/enter_cleaner', methods=['GET', 'POST'])
-def enter_cleaner():
-    if request.method == 'POST':
-        session['cleaner'] = request.form['cleaner']
-        return redirect(url_for('upload'))
-    return render_template('enter_cleaner.html')
-
-@app.route('/upload', methods=['GET', 'POST'])
-def upload():
-    cleaner = session.get('cleaner')
-    if not cleaner:
-        return redirect(url_for('enter_cleaner'))
-
-    if request.method == 'POST':
-        hostname = request.form['hostname']
-        session['hostname'] = hostname
-        before_file = request.files['before']
-        after_file = request.files['after']
-        today = datetime.now().strftime("%Y-%m-%d")
-
-        if not all([hostname, before_file, after_file]):
-            flash("All fields are required")
-            return redirect(url_for('upload'))
-
-        # ✅ Check for duplicate
-        existing = Entry.query.filter_by(hostname=hostname, date=today).first()
-        if existing:
-            flash("This hostname already exists for today.")
-            return redirect(url_for('upload'))
-
-        before_filename = secure_filename(f"{hostname}_before.jpg")
-        after_filename = secure_filename(f"{hostname}_after.jpg")
-        before_path = os.path.join(app.config['UPLOAD_FOLDER'], before_filename)
-        after_path = os.path.join(app.config['UPLOAD_FOLDER'], after_filename)
-        before_file.save(before_path)
-        after_file.save(after_path)
-
-        watermark(before_path, hostname)
-        watermark(after_path, hostname)
-
-        entry = Entry(
-            hostname=hostname,
-            cleaner=cleaner,
-            date=today,
-            before_photo=before_filename,
-            after_photo=after_filename
-        )
-        db.session.add(entry)
-        db.session.commit()
-
-        # ZIP creation
-        zip_path = os.path.join(app.config['ZIP_FOLDER'], f"{hostname}.zip")
-        with zipfile.ZipFile(zip_path, 'w') as zipf:
-            zipf.write(before_path, arcname=before_filename)
-            zipf.write(after_path, arcname=after_filename)
-
-        return redirect(url_for('success', hostname=hostname))
-
-    return render_template('index.html', cleaner=cleaner)
-
-@app.route('/success/<hostname>')
-def success(hostname):
-    return render_template('success.html', hostname=hostname)
-
-@app.route('/download/<hostname>')
-def download(hostname):
-    zip_path = os.path.join(app.config['ZIP_FOLDER'], f"{hostname}.zip")
-    return send_file(zip_path, as_attachment=True)
-
-@app.route('/logout')
-def logout():
-    session.pop('cleaner', None)
-    session.pop('hostname', None)
-    return redirect(url_for('enter_cleaner'))
-
-if __name__ == '__main__':
-    app.run(debug=True)
+        <button type="submit"
+                class="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 transition">
+            Submit
+        </button>
+    </form>
+</body>
+</html>
